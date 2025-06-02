@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YOLOv5 Object Detection</title>
+  <style>
+    * {
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+.logo-header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 3rem;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+.logo-header h1 {
+  font-family: 'Segoe UI Black', 'Arial Black', Arial, sans-serif;
+  font-size: 3.5rem;
+  letter-spacing: 0.15em;
+  color: #00e5ff;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 6px #00e5ff,
+    0 0 12px #00b8d4,
+    0 0 18px #00b8d4,
+    0 0 24px #0097a7;
+  animation: glowPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes glowPulse {
+  from {
+    text-shadow:
+      0 0 6pxrgb(17, 127, 140),
+      0 0 12px #00b8d4,
+      0 0 18px #00b8d4,
+      0 0 24px #0097a7;
+  }
+  to {
+    text-shadow:
+      0 0 12px #00e5ff,
+      0 0 20px #00b8d4,
+      0 0 28px #00b8d4,
+      0 0 40px #0097a7;
+  }
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 2rem;
+  min-height: 100vh;
+  background: linear-gradient(270deg, #2c5364, #203a43, #0f2027, #2c5364);
+  background-size: 800% 800%;
+  animation: gradientBG 15s ease infinite;
+  color: #e0f7fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+@keyframes gradientBG {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
+}
+
+h2, h3 {
+  color: #00ffff;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 6px #00ffffaa;
+  font-weight: 700;
+}
+
+section {
+  width: 100%;
+  max-width: 600px;
+  background: rgba(0, 255, 166, 0.12);
+  padding: 1.5rem 2rem;
+  border-radius: 15px;
+  margin-bottom: 2.5rem;
+  box-shadow:
+    0 8px 20px rgba(142, 235, 11, 0.3),
+    inset 0 0 10px rgba(6, 189, 125, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(43, 24, 150, 0.3);
+  transition: box-shadow 0.4s ease;
+}
+
+section:hover {
+  box-shadow:
+    0 12px 30px rgba(0, 188, 212, 0.6),
+    inset 0 0 20px rgba(0, 188, 212, 0.4);
+}
+
+input[type="file"] {
+  margin: 1.2rem 0;
+  background: #00bcd4;
+  padding: 0.6rem;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  color: white;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 4px 8px #00bcd499;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input[type="file"]:hover {
+  background: #0097a7;
+  box-shadow: 0 6px 14px #0097a7cc;
+}
+
+img, video, canvas {
+  max-width: 100%;
+  border-radius: 15px;
+  margin: 1.2rem 0;
+  box-shadow:
+    0 8px 18px rgba(0, 188, 212, 0.5);
+  display: block;
+  filter: drop-shadow(0 0 10px #00bcd4aa);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+img:hover, video:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 12px 30px rgba(0, 188, 212, 0.8);
+}
+
+button {
+  background-color: #00bcd4;
+  border: none;
+  color: white;
+  padding: 12px 25px;
+  margin: 5px 8px 5px 0;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 5px 15px #00bcd4cc;
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.15s ease;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 100%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+  z-index: 0;
+}
+
+button:hover::after {
+  width: 200%;
+  height: 500%;
+}
+
+button:hover {
+  background-color: #0097a7;
+  box-shadow: 0 7px 22px #0097a7cc;
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px #007c91cc;
+}
+
+button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-group {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
+
+  section {
+    padding: 1rem 1.3rem;
+  }
+
+  button {
+    width: 100%;
+    margin: 0.5rem 0;
+  }
+
+  .btn-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  </style>
+</head>
+<body>
+  <a href="about.html"<header class="logo-header"><h1>Object Detection</h1></header></a>
+
+  <!-- IMAGE DETECTION Shows Here-->
+  <section id="image-detection">
+    <h2>Image Detection</h2>
+    <input type="file" id="imageInput" accept="image/*" />
+    <img id="preview" class="hidden" alt="Image preview" />
+    <div class="btn-group">
+      <button id="detectImageBtn" disabled>Detect</button>
+      <button id="clearImageBtn">Clear</button>
+    </div>
+    <h3>Result:</h3>
+    <img id="resultImage" class="hidden" alt="Detection result" />
+  </section>
+
+  <!-- WEBCAM DETECTION Shows Here -->
+  <section id="webcam-detection">
+    <h2>Live Webcam Detection</h2>
+    <video id="webcam" width="400" autoplay class="hidden"></video>
+    <div class="btn-group">
+      <button id="startWebcamBtn">Start Webcam</button>
+      <button id="stopWebcamBtn" disabled>Stop Webcam</button>
+      <button id="clearWebcamResultBtn">Clear Result</button>
+    </div>
+    <h3>Result:</h3>
+    <img id="webcamResult" class="hidden" alt="Webcam detection result" />
+  </section>
+
+  <!-- VIDEO DETECTION Shows Here-->
+  <section id="video-detection">
+    <h2>Video File Detection</h2>
+    <input type="file" id="videoInput" accept="video/*" />
+    <video id="videoPlayer" controls class="hidden"></video>
+    <div class="btn-group">
+      <button id="startVideoDetectBtn" disabled>Start Detection</button>
+      <button id="stopVideoDetectBtn" disabled>Stop Detection</button>
+      <button id="clearVideoBtn">Clear</button>
+    </div>
+    <h3>Result:</h3>
+    <img id="videoResult" class="hidden" alt="Video detection result" />
+  </section>
+
+<script>
+  // Utility function to show/hide images
+  function setImageSrc(imgElement, src) {
+    if (src) {
+      imgElement.src = src;
+      imgElement.classList.remove("hidden");
+    } else {
+      imgElement.src = "";
+      imgElement.classList.add("hidden");
+    }
+  }
+
+  // --- IMAGE DETECTION ---
+
+  const imageInput = document.getElementById("imageInput");
+  const preview = document.getElementById("preview");
+  const detectImageBtn = document.getElementById("detectImageBtn");
+  const clearImageBtn = document.getElementById("clearImageBtn");
+  const resultImage = document.getElementById("resultImage");
+
+  let imageBase64 = "";
+
+  imageInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      imageBase64 = reader.result;
+      setImageSrc(preview, imageBase64);
+      detectImageBtn.disabled = false;
+      setImageSrc(resultImage, ""); // clear old result
+    };
+    reader.readAsDataURL(file);
+  });
+
+  detectImageBtn.addEventListener("click", () => {
+    if (!imageBase64) return;
+    stopWebcamDetection(); // stop webcam if running
+    stopVideoDetection(); // stop video detection if running
+    detectImageBtn.disabled = true;
+
+    fetch("/detect/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": getCSRFToken()
+      },
+      body: "image=" + encodeURIComponent(imageBase64)
+    })
+    .then(res => res.json())
+    .then(data => {
+      detectImageBtn.disabled = false;
+      if (data.result_image) {
+        setImageSrc(resultImage, data.result_image);
+      } else {
+        alert("No detection result received.");
+      }
+    })
+    .catch(err => {
+      detectImageBtn.disabled = false;
+      alert("Detection error: " + err.message);
+    });
+  });
+
+  clearImageBtn.addEventListener("click", () => {
+    imageInput.value = "";
+    imageBase64 = "";
+    setImageSrc(preview, "");
+    setImageSrc(resultImage, "");
+    detectImageBtn.disabled = true;
+  });
+
+  // --- WEBCAM DETECTION ---
+
+  const webcamVideo = document.getElementById("webcam");
+  const startWebcamBtn = document.getElementById("startWebcamBtn");
+  const stopWebcamBtn = document.getElementById("stopWebcamBtn");
+  const clearWebcamResultBtn = document.getElementById("clearWebcamResultBtn");
+  const webcamResult = document.getElementById("webcamResult");
+
+  let webcamStream = null;
+  let webcamInterval = null;
+
+  startWebcamBtn.addEventListener("click", () => {
+    stopVideoDetection();
+    startWebcamBtn.disabled = true;
+    stopWebcamBtn.disabled = false;
+    setImageSrc(webcamResult, "");
+    startWebcamDetection();
+  });
+
+  stopWebcamBtn.addEventListener("click", () => {
+    stopWebcamDetection();
+  });
+
+  clearWebcamResultBtn.addEventListener("click", () => {
+    setImageSrc(webcamResult, "");
+  });
+
+  function startWebcamDetection() {
+    webcamVideo.classList.remove("hidden");
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      webcamStream = stream;
+      webcamVideo.srcObject = stream;
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      webcamInterval = setInterval(() => {
+        if (webcamVideo.readyState !== 4) return; // video not ready
+        canvas.width = webcamVideo.videoWidth;
+        canvas.height = webcamVideo.videoHeight;
+        ctx.drawImage(webcamVideo, 0, 0);
+        const imgData = canvas.toDataURL("image/jpeg");
+
+        fetch("/detect/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": getCSRFToken()
+          },
+          body: "image=" + encodeURIComponent(imgData)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.result_image) {
+            setImageSrc(webcamResult, data.result_image);
+          }
+        })
+        .catch(() => {
+          // Ignore errors during webcam detection
+        });
+      }, 1000);
+    }).catch(err => {
+      alert("Could not start webcam: " + err.message);
+      startWebcamBtn.disabled = false;
+      stopWebcamBtn.disabled = true;
+    });
+  }
+
+  function stopWebcamDetection() {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach(track => track.stop());
+      webcamStream = null;
+    }
+    clearInterval(webcamInterval);
+    webcamInterval = null;
+    webcamVideo.classList.add("hidden");
+    startWebcamBtn.disabled = false;
+    stopWebcamBtn.disabled = true;
+  }
+
+  // --- VIDEO FILE DETECTION ---
+
+  const videoInput = document.getElementById("videoInput");
+  const videoPlayer = document.getElementById("videoPlayer");
+  const startVideoDetectBtn = document.getElementById("startVideoDetectBtn");
+  const stopVideoDetectBtn = document.getElementById("stopVideoDetectBtn");
+  const clearVideoBtn = document.getElementById("clearVideoBtn");
+  const videoResult = document.getElementById("videoResult");
+
+  let videoDetectInterval = null;
+
+  videoInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const videoURL = URL.createObjectURL(file);
+    videoPlayer.src = videoURL;
+    videoPlayer.classList.remove("hidden");
+    startVideoDetectBtn.disabled = false;
+    stopVideoDetectBtn.disabled = true;
+    setImageSrc(videoResult, "");
+    stopWebcamDetection();
+  });
+
+  startVideoDetectBtn.addEventListener("click", () => {
+    if (!videoPlayer.src) return;
+    startVideoDetectBtn.disabled = true;
+    stopVideoDetectBtn.disabled = false;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    videoPlayer.play();
+
+    videoDetectInterval = setInterval(() => {
+      if (videoPlayer.paused || videoPlayer.ended) {
+        clearInterval(videoDetectInterval);
+        startVideoDetectBtn.disabled = false;
+        stopVideoDetectBtn.disabled = true;
+        return;
+      }
+
+      canvas.width = videoPlayer.videoWidth;
+      canvas.height = videoPlayer.videoHeight;
+      ctx.drawImage(videoPlayer, 0, 0);
+
+      const frameData = canvas.toDataURL("image/jpeg");
+
+      fetch("/detect/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": getCSRFToken()
+        },
+        body: "image=" + encodeURIComponent(frameData)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.result_image) {
+          setImageSrc(videoResult, data.result_image);
+        }
+      })
+      .catch(() => {
+        // ignore errors
+      });
+    }, 1000);
+  });
+
+  stopVideoDetectBtn.addEventListener("click", () => {
+    stopVideoDetection();
+  });
+
+  clearVideoBtn.addEventListener("click", () => {
+    videoInput.value = "";
+    videoPlayer.pause();
+    videoPlayer.src = "";
+    videoPlayer.classList.add("hidden");
+    setImageSrc(videoResult, "");
+    startVideoDetectBtn.disabled = true;
+    stopVideoDetectBtn.disabled = true;
+  });
+
+  function stopVideoDetection() {
+    clearInterval(videoDetectInterval);
+    videoDetectInterval = null;
+    startVideoDetectBtn.disabled = false;
+    stopVideoDetectBtn.disabled = true;
+    videoPlayer.pause();
+  }
+
+  // --- CSRF Token helper for Django (remove if not using Django) ---
+  function getCSRFToken() {
+    const csrfCookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+    return csrfCookie ? csrfCookie.split('=')[1] : '';
+  }
+</script>
+</body>
+</html>
