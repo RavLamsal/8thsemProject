@@ -19,6 +19,11 @@ def index(request):
 def about_view(request):
     return render(request, 'about.html')
 
+def anup_view(request):
+    return render(request, 'anup.html')
+
+def saurav_view(request):
+    return render(request, 'saurav.html')
 
 def detect(request):
     if request.method == 'POST':
