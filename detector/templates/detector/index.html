@@ -204,6 +204,50 @@ button:disabled {
   display: none !important;
 }
 
+/* Dark Theme */
+/* Put this outside any media query */
+
+body.dark-theme {
+  background: #121212 !important;
+  color: #e0e0e0 !important;
+  animation: none !important; /* stop gradient animation */
+}
+
+body.dark-theme .logo-header h1 {
+  color: #66ccff !important;
+  text-shadow: none !important;
+}
+
+body.dark-theme section {
+  background: #1e1e1e !important;
+  border-color: #444 !important;
+  box-shadow:
+    0 8px 20px rgba(80, 150, 220, 0.3),
+    inset 0 0 10px rgba(50, 100, 150, 0.2) !important;
+}
+
+body.dark-theme button {
+  background-color: #333 !important;
+  color: #eee !important;
+  box-shadow: 0 5px 15px #444 !important;
+}
+
+body.dark-theme button:hover {
+  background-color: #555 !important;
+  box-shadow: 0 7px 22px #666 !important;
+}
+
+body.dark-theme input[type="file"] {
+  background-color: #555 !important;
+  color: #ddd !important;
+}
+
+body.dark-theme input[type="file"]:hover {
+  background-color: #777 !important;
+}
+
+
+
 @media (max-width: 600px) {
   body {
     padding: 1rem;
@@ -222,10 +266,14 @@ button:disabled {
     flex-direction: column;
     gap: 10px;
   }
+
   </style>
 </head>
 <body>
-  <a href="about.html"<header class="logo-header"><h1>Object Detection</h1></header></a>
+  <div class="theme-toggle">
+  <button id="theme-toggle-button">Dark Mode</button>
+</div>
+<a href="about.html"><header class="logo-header"><h1>Object Detection</h1></header></a>
 
   <!-- IMAGE DETECTION Shows Here-->
   <section id="image-detection">
@@ -238,7 +286,13 @@ button:disabled {
     </div>
     <h3>Result:</h3>
     <img id="resultImage" class="hidden" alt="Detection result" />
+  <a id="imgDownload" class="hidden" download="detected_result.jpg" style="display:inline-block; padding:10px 20px; background:#28a745; color:white; text-decoration:none; border-radius:5px; margin-top:10px;">
+  ⬇️ Download Detected Image
+</a>
+
+
   </section>
+  
 
   <!-- WEBCAM DETECTION Shows Here -->
   <section id="webcam-detection">
@@ -251,6 +305,11 @@ button:disabled {
     </div>
     <h3>Result:</h3>
     <img id="webcamResult" class="hidden" alt="Webcam detection result" />
+
+    <a id="downloadWebcamResult" class="hidden" download="webcam_detection_result.jpg">
+  <button>Download Result</button>
+</a>
+
   </section>
 
   <!-- VIDEO DETECTION Shows Here-->
@@ -265,6 +324,21 @@ button:disabled {
     </div>
     <h3>Result:</h3>
     <img id="videoResult" class="hidden" alt="Video detection result" />
+    <a id="downloadVideoBtn" class="hidden" download="video_result.jpg" style="
+    display: inline-block;
+    padding: 12px 25px;
+    background-color: #00bcd4;
+    color: white;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    text-decoration: none;
+    user-select: none;
+  ">
+  Download Result
+</a>
+
+
   </section>
 
 <script>
@@ -278,6 +352,29 @@ button:disabled {
       imgElement.classList.add("hidden");
     }
   }
+
+ const themeToggleButton = document.getElementById('theme-toggle-button');
+
+// Initialize based on saved theme
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark-theme');
+  themeToggleButton.textContent = 'Light Mode';
+} else {
+  themeToggleButton.textContent = 'Dark Mode';
+}
+
+themeToggleButton.addEventListener('click', () => {
+  if (document.body.classList.contains('dark-theme')) {
+    document.body.classList.remove('dark-theme');
+    themeToggleButton.textContent = 'Dark Mode';
+    localStorage.setItem('theme', 'light');
+  } else {
+    document.body.classList.add('dark-theme');
+    themeToggleButton.textContent = 'Light Mode';
+    localStorage.setItem('theme', 'dark');
+  }
+});
+
 
   // --- IMAGE DETECTION ---
 
@@ -322,6 +419,14 @@ button:disabled {
       detectImageBtn.disabled = false;
       if (data.result_image) {
         setImageSrc(resultImage, data.result_image);
+        const imgDownload = document.getElementById("imgDownload");
+
+if (data.result_image) {
+  setImageSrc(resultImage, data.result_image);
+  imgDownload.href = data.result_image;
+  imgDownload.classList.remove("hidden");
+}
+
       } else {
         alert("No detection result received.");
       }
@@ -338,10 +443,13 @@ button:disabled {
     setImageSrc(preview, "");
     setImageSrc(resultImage, "");
     detectImageBtn.disabled = true;
+    imgDownload.classList.add("hidden");
+
   });
 
-  // --- WEBCAM DETECTION ---
 
+
+{% comment %} to be added {% endcomment %}
   const webcamVideo = document.getElementById("webcam");
   const startWebcamBtn = document.getElementById("startWebcamBtn");
   const stopWebcamBtn = document.getElementById("stopWebcamBtn");
@@ -419,6 +527,10 @@ button:disabled {
     startWebcamBtn.disabled = false;
     stopWebcamBtn.disabled = true;
   }
+  if (webcamResult.src) {
+      document.getElementById("downloadWebcamResult").classList.remove("hidden");
+      document.getElementById("downloadWebcamResult").href = webcamResult.src;
+    }
 
   // --- VIDEO FILE DETECTION ---
 
@@ -483,7 +595,6 @@ button:disabled {
         }
       })
       .catch(() => {
-        // ignore errors
       });
     }, 1000);
   });
@@ -492,15 +603,19 @@ button:disabled {
     stopVideoDetection();
   });
 
-  clearVideoBtn.addEventListener("click", () => {
-    videoInput.value = "";
-    videoPlayer.pause();
-    videoPlayer.src = "";
-    videoPlayer.classList.add("hidden");
-    setImageSrc(videoResult, "");
-    startVideoDetectBtn.disabled = true;
-    stopVideoDetectBtn.disabled = true;
-  });
+clearVideoBtn.addEventListener("click", () => {
+  videoInput.value = "";
+  videoPlayer.src = "";
+  videoPlayer.classList.add("hidden");
+  videoResult.src = "";
+  videoResult.classList.add("hidden");
+  startVideoDetectBtn.disabled = true;
+  stopVideoDetectBtn.disabled = true;
+
+  const downloadVideoBtn = document.getElementById("downloadVideoBtn");
+  downloadVideoBtn.href = "";
+  downloadVideoBtn.classList.add("hidden");
+});
 
   function stopVideoDetection() {
     clearInterval(videoDetectInterval);
@@ -510,7 +625,7 @@ button:disabled {
     videoPlayer.pause();
   }
 
-  // --- CSRF Token helper for Django (remove if not using Django) ---
+  // --- CSRF Token helper for Django ---
   function getCSRFToken() {
     const csrfCookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
     return csrfCookie ? csrfCookie.split('=')[1] : '';
